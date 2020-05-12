@@ -35,6 +35,7 @@ export interface ScmFileChangeRootNode extends CompositeTreeNode {
 
 export interface ScmFileChangeGroupNode extends ExpandableTreeNode {
     groupId: string;
+    groupLabel: string;
     children: (ScmFileChangeFolderNode | ScmFileChangeNode)[];
 }
 
@@ -143,6 +144,7 @@ export class ScmTreeModel extends TreeModelImpl {
         const groupNode: ScmFileChangeGroupNode = {
             id: `${group.id}`,
             groupId: group.id,
+            groupLabel: group.label,
             parent,
             children: [],
             expanded: true,
@@ -296,6 +298,20 @@ export class ScmTreeModel extends TreeModelImpl {
                 }
             }
         }
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    storeState(): any {
+        return {
+            ...super.storeState(),
+            mode: this.viewMode,
+        };
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    restoreState(oldState: any): void {
+        super.restoreState(oldState);
+        this.viewMode = oldState.mode === 'tree' ? 'tree' : 'list';
     }
 
 }
