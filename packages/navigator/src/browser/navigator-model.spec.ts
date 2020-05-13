@@ -136,7 +136,6 @@ describe('FileNavigatorModel', () => {
     const mockFileChangeEmitter: Emitter<FileChange[]> = new Emitter();
     const mockFileMoveEmitter: Emitter<FileMoveEvent> = new Emitter();
     const mockTreeChangeEmitter: Emitter<void> = new Emitter();
-    const mockNodesAddedEmitter: Emitter<TreeNode[]> = new Emitter();
     const mockExpansionChangeEmitter: Emitter<Readonly<ExpandableTreeNode>> = new Emitter();
 
     let navigatorModel: FileNavigatorModel;
@@ -189,7 +188,6 @@ describe('FileNavigatorModel', () => {
         sinon.stub(mockFileSystemWatcher, 'onFilesChanged').value(mockFileChangeEmitter.event);
         sinon.stub(mockFileSystemWatcher, 'onDidMove').value(mockFileMoveEmitter.event);
         sinon.stub(mockFileNavigatorTree, 'onChanged').value(mockTreeChangeEmitter.event);
-        sinon.stub(mockFileNavigatorTree, 'onNodesAdded').value(mockNodesAddedEmitter.event);
         sinon.stub(mockFileNavigatorTree, 'onDidChangeBusy').value(Event.None);
         sinon.stub(mockTreeExpansionService, 'onExpansionChanged').value(mockExpansionChangeEmitter.event);
 

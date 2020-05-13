@@ -40,7 +40,12 @@ import {
     MenuPath,
     Mutable
 } from '@theia/core/lib/common';
-import { WorkspaceCommands, WorkspacePreferences, WorkspaceService } from '@theia/workspace/lib/browser';
+import {
+    WorkspaceCommandContribution,
+    WorkspaceCommands,
+    WorkspacePreferences,
+    WorkspaceService
+} from '@theia/workspace/lib/browser';
 import { EXPLORER_VIEW_CONTAINER_ID, FILE_NAVIGATOR_ID, FileNavigatorWidget } from './navigator-widget';
 import { FileNavigatorPreferences } from './navigator-preferences';
 import { NavigatorKeybindingContexts } from './navigator-keybinding-context';
@@ -55,8 +60,9 @@ import {
 import { FileSystemCommands } from '@theia/filesystem/lib/browser/filesystem-frontend-contribution';
 import { NavigatorDiff, NavigatorDiffCommands } from './navigator-diff';
 import { UriSelection } from '@theia/core/lib/common/selection';
-import { FileChangeType, FileStatNode, FileSystemWatcher } from '@theia/filesystem/lib/browser';
-import { CommandEvents } from '@theia/workspace/lib/browser/command-events';
+import { DirNode } from '@theia/filesystem/lib/browser';
+import { FileNavigatorModel } from './navigator-model';
+import URI from '@theia/core/lib/common/uri';
 
 export namespace FileNavigatorCommands {
     export const REVEAL_IN_NAVIGATOR: Command = {
@@ -151,11 +157,8 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
 
-    @inject(FileSystemWatcher)
-    protected readonly watcher: FileSystemWatcher;
-
-    @inject(CommandEvents)
-    protected readonly commandEvents: CommandEvents;
+    @inject(WorkspaceCommandContribution)
+    protected readonly workspaceCommandContribution: WorkspaceCommandContribution;
 
     constructor(
         @inject(FileNavigatorPreferences) protected readonly fileNavigatorPreferences: FileNavigatorPreferences,
@@ -190,32 +193,23 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         updateFocusContextKeys();
         this.shell.activeChanged.connect(updateFocusContextKeys);
         const widget = await this.widget;
-        const model = widget.model;
-        let addedResourceUri: string | undefined;
-        this.commandEvents.onNewFileCommand(uri => {
-            addedResourceUri = uri.toString();
-        });
-        this.commandEvents.onNewFolderCommand(uri => {
-            addedResourceUri = uri.toString();
-        });
-        model.onNodesAdded(async nodes => {
-            // Select created new file or folder.
-            const node = nodes[0];
-            if (nodes.length === 1 && SelectableTreeNode.is(node) && FileStatNode.is(node) && node.fileStat.uri.toString() === addedResourceUri) {
-                addedResourceUri = undefined;
-                model.selectNode(node);
+        const model: FileNavigatorModel = widget.model;
+        this.workspaceCommandContribution.onNewFileCommand(async uri => this.onDidCreateNewResource(uri, model));
+        this.workspaceCommandContribution.onNewFolderCommand(async uri => this.onDidCreateNewResource(uri, model));
+    }
+
+    private async onDidCreateNewResource(uri: URI, model: FileNavigatorModel): Promise<void> {
+        const parent = model.getNodesByUri(uri.parent).next().value;
+        if (DirNode.is(parent)) {
+            await model.refresh(parent);
+            if (ExpandableTreeNode.is(parent) && !parent.expanded) {
+                await model.expandNode(parent);
             }
-        });
-        this.watcher.onFilesChanged(changes => {
-            // Expand the parent of the created new file or folder.
-            const change = changes[0];
-            if (changes.length === 1 && change.type === FileChangeType.ADDED) {
-                const node = model.getNodesByUri(change.uri.parent).next().value;
-                if (change.uri.toString() === addedResourceUri && ExpandableTreeNode.is(node) && !node.expanded) {
-                    model.expandNode(node);
-                }
-            }
-        });
+        }
+        const node = model.getNodesByUri(uri).next().value;
+        if (SelectableTreeNode.is(node)) {
+            model.selectNode(node);
+        }
     }
 
     async onStart(app: FrontendApplication): Promise<void> {

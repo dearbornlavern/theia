@@ -44,7 +44,6 @@ import { WorkspaceDuplicateHandler } from './workspace-duplicate-handler';
 import { WorkspaceUtils } from './workspace-utils';
 import { WorkspaceCompareHandler } from './workspace-compare-handler';
 import { DiffService } from './diff-service';
-import { CommandEvents } from './command-events';
 
 export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Unbind, isBound: interfaces.IsBound, rebind: interfaces.Rebind) => {
     bindWorkspacePreferences(bind);
@@ -90,5 +89,4 @@ export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Un
     bind(QuickOpenWorkspace).toSelf().inSingletonScope();
 
     bind(WorkspaceUtils).toSelf().inSingletonScope();
-    bind(CommandEvents).toSelf().inSingletonScope();
 });
