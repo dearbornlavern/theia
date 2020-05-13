@@ -481,6 +481,9 @@ export class TaskService implements TaskConfigurationClient {
         task = this.taskConfigurations.getTask(scope, taskLabel);
 
         console.error('+++ TASK service !!! RUN after get configured ', task);
+        const finishConfiged = new Date().valueOf();
+        console.info('!!!!!  TASK service !!! after get configed ', finishConfiged);
+        console.error('!!!!!  TASK service !!! get configed ', (finishConfiged - startRun) / 1000);
 
         if (!task) { // if a configured task cannot be found, search from detected tasks
             task = await this.getProvidedTask(source, taskLabel, scope);
