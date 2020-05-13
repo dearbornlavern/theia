@@ -234,8 +234,8 @@ export class WorkspaceCommandContribution implements CommandContribution {
                         if (name) {
                             const fileUri = parentUri.resolve(name);
                             this.fileSystem.createFile(fileUri.toString()).then(async () => {
-                                await open(this.openerService, fileUri);
                                 this.fireCreateNewFile(fileUri);
+                                open(this.openerService, fileUri);
                             });
                         }
                     });
