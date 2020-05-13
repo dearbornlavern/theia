@@ -18,7 +18,7 @@ import { inject, injectable, postConstruct } from 'inversify';
 import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
 import {
     CommonCommands,
-    CompositeTreeNode, ExpandableTreeNode,
+    CompositeTreeNode,
     FrontendApplication,
     FrontendApplicationContribution,
     KeybindingRegistry,
@@ -192,21 +192,21 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         };
         updateFocusContextKeys();
         this.shell.activeChanged.connect(updateFocusContextKeys);
-        const widget = await this.widget;
-        const model: FileNavigatorModel = widget.model;
-        this.workspaceCommandContribution.onDidCreateNewFile(async uri => this.onDidCreateNewResource(uri, model));
-        this.workspaceCommandContribution.onDidCreateNewFolder(async uri => this.onDidCreateNewResource(uri, model));
+        this.workspaceCommandContribution.onDidCreateNewFile(async uri => this.onDidCreateNewResource(uri));
+        this.workspaceCommandContribution.onDidCreateNewFolder(async uri => this.onDidCreateNewResource(uri));
     }
 
-    private async onDidCreateNewResource(uri: URI, model: FileNavigatorModel): Promise<void> {
-        const parent = model.getNodesByUri(uri.parent).next().value;
+    private async onDidCreateNewResource(uri: URI): Promise<void> {
+        const navigator = await this.tryGetWidget();
+        if (!navigator || !navigator.isVisible) {
+            return;
+        }
+        const model: FileNavigatorModel = navigator.model;
+        const parent = await model.revealFile(uri.parent);
         if (DirNode.is(parent)) {
             await model.refresh(parent);
-            if (ExpandableTreeNode.is(parent) && !parent.expanded) {
-                await model.expandNode(parent);
-            }
         }
-        const node = model.getNodesByUri(uri).next().value;
+        const node = await model.revealFile(uri);
         if (SelectableTreeNode.is(node)) {
             model.selectNode(node);
         }
