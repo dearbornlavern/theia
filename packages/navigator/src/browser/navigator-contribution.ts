@@ -194,8 +194,8 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         this.shell.activeChanged.connect(updateFocusContextKeys);
         const widget = await this.widget;
         const model: FileNavigatorModel = widget.model;
-        this.workspaceCommandContribution.onNewFileCommand(async uri => this.onDidCreateNewResource(uri, model));
-        this.workspaceCommandContribution.onNewFolderCommand(async uri => this.onDidCreateNewResource(uri, model));
+        this.workspaceCommandContribution.onDidCreateNewFile(async uri => this.onDidCreateNewResource(uri, model));
+        this.workspaceCommandContribution.onDidCreateNewFolder(async uri => this.onDidCreateNewResource(uri, model));
     }
 
     private async onDidCreateNewResource(uri: URI, model: FileNavigatorModel): Promise<void> {

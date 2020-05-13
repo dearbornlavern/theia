@@ -189,25 +189,19 @@ export class WorkspaceCommandContribution implements CommandContribution {
     private readonly onDidCreateNewFileEmitter = new Emitter<URI>();
     private readonly onDidCreateNewFolderEmitter = new Emitter<URI>();
 
-    /**
-     * Emit when the 'New File' command is clicked.
-     */
-    get onNewFileCommand(): Event<URI> {
+    get onDidCreateNewFile(): Event<URI> {
         return this.onDidCreateNewFileEmitter.event;
     }
 
-    /**
-     * Emit when the 'New Folder' command is clicked.
-     */
-    get onNewFolderCommand(): Event<URI> {
+    get onDidCreateNewFolder(): Event<URI> {
         return this.onDidCreateNewFolderEmitter.event;
     }
 
-    fireNewFileCommand(uri: URI): void {
+    protected fireCreateNewFile(uri: URI): void {
         this.onDidCreateNewFileEmitter.fire(uri);
     }
 
-    fireNewFolderCommand(uri: URI): void {
+    protected fireCreateNewFolder(uri: URI): void {
         this.onDidCreateNewFolderEmitter.fire(uri);
     }
 
@@ -241,7 +235,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
                             const fileUri = parentUri.resolve(name);
                             this.fileSystem.createFile(fileUri.toString()).then(async () => {
                                 await open(this.openerService, fileUri);
-                                this.fireNewFileCommand(fileUri);
+                                this.fireCreateNewFile(fileUri);
                             });
                         }
                     });
@@ -263,7 +257,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
                         if (name) {
                             const folderUri = parentUri.resolve(name);
                             await this.fileSystem.createFolder(parentUri.resolve(name).toString());
-                            this.fireNewFileCommand(folderUri);
+                            this.fireCreateNewFile(folderUri);
                         }
                     });
                 }
