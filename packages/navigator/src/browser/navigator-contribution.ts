@@ -41,6 +41,7 @@ import {
     Mutable
 } from '@theia/core/lib/common';
 import {
+    DidCreateNewResourceEvent,
     WorkspaceCommandContribution,
     WorkspaceCommands,
     WorkspacePreferences,
@@ -62,7 +63,6 @@ import { NavigatorDiff, NavigatorDiffCommands } from './navigator-diff';
 import { UriSelection } from '@theia/core/lib/common/selection';
 import { DirNode } from '@theia/filesystem/lib/browser';
 import { FileNavigatorModel } from './navigator-model';
-import URI from '@theia/core/lib/common/uri';
 
 export namespace FileNavigatorCommands {
     export const REVEAL_IN_NAVIGATOR: Command = {
@@ -192,23 +192,30 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         };
         updateFocusContextKeys();
         this.shell.activeChanged.connect(updateFocusContextKeys);
-        this.workspaceCommandContribution.onDidCreateNewFile(async uri => this.onDidCreateNewResource(uri));
-        this.workspaceCommandContribution.onDidCreateNewFolder(async uri => this.onDidCreateNewResource(uri));
+        this.workspaceCommandContribution.onDidCreateNewFile(async event => this.onDidCreateNewResource(event));
+        this.workspaceCommandContribution.onDidCreateNewFolder(async event => this.onDidCreateNewResource(event));
     }
 
-    private async onDidCreateNewResource(uri: URI): Promise<void> {
-        const navigator = await this.tryGetWidget();
+    private async onDidCreateNewResource(event: DidCreateNewResourceEvent): Promise<void> {
+        const navigator = this.tryGetWidget();
         if (!navigator || !navigator.isVisible) {
             return;
         }
         const model: FileNavigatorModel = navigator.model;
-        const parent = await model.revealFile(uri.parent);
-        if (DirNode.is(parent)) {
-            await model.refresh(parent);
+        for (const uri of event.uri.allLocations) {
+            if (event.parent.isEqualOrParent(uri)) {
+                const parent = await model.revealFile(uri);
+                if (DirNode.is(parent)) {
+                    await model.refresh(parent);
+                }
+            }
         }
-        const node = await model.revealFile(uri);
+        const node = await model.revealFile(event.uri);
         if (SelectableTreeNode.is(node)) {
             model.selectNode(node);
+            if (DirNode.is(node)) {
+                this.openView({ activate: true });
+            }
         }
     }
 

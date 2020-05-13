@@ -170,6 +170,11 @@ export class EditMenuContribution implements MenuContribution {
 
 }
 
+export interface DidCreateNewResourceEvent {
+    uri: URI
+    parent: URI
+}
+
 @injectable()
 export class WorkspaceCommandContribution implements CommandContribution {
 
@@ -186,22 +191,22 @@ export class WorkspaceCommandContribution implements CommandContribution {
     @inject(WorkspaceDuplicateHandler) protected readonly duplicateHandler: WorkspaceDuplicateHandler;
     @inject(WorkspaceCompareHandler) protected readonly compareHandler: WorkspaceCompareHandler;
 
-    private readonly onDidCreateNewFileEmitter = new Emitter<URI>();
-    private readonly onDidCreateNewFolderEmitter = new Emitter<URI>();
+    private readonly onDidCreateNewFileEmitter = new Emitter<DidCreateNewResourceEvent>();
+    private readonly onDidCreateNewFolderEmitter = new Emitter<DidCreateNewResourceEvent>();
 
-    get onDidCreateNewFile(): Event<URI> {
+    get onDidCreateNewFile(): Event<DidCreateNewResourceEvent> {
         return this.onDidCreateNewFileEmitter.event;
     }
 
-    get onDidCreateNewFolder(): Event<URI> {
+    get onDidCreateNewFolder(): Event<DidCreateNewResourceEvent> {
         return this.onDidCreateNewFolderEmitter.event;
     }
 
-    protected fireCreateNewFile(uri: URI): void {
+    protected fireCreateNewFile(uri: DidCreateNewResourceEvent): void {
         this.onDidCreateNewFileEmitter.fire(uri);
     }
 
-    protected fireCreateNewFolder(uri: URI): void {
+    protected fireCreateNewFolder(uri: DidCreateNewResourceEvent): void {
         this.onDidCreateNewFolderEmitter.fire(uri);
     }
 
@@ -234,7 +239,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
                         if (name) {
                             const fileUri = parentUri.resolve(name);
                             this.fileSystem.createFile(fileUri.toString()).then(async () => {
-                                this.fireCreateNewFile(fileUri);
+                                this.fireCreateNewFile({ parent: parentUri, uri: fileUri });
                                 open(this.openerService, fileUri);
                             });
                         }
@@ -257,7 +262,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
                         if (name) {
                             const folderUri = parentUri.resolve(name);
                             await this.fileSystem.createFolder(parentUri.resolve(name).toString());
-                            this.fireCreateNewFile(folderUri);
+                            this.fireCreateNewFile({ parent: parentUri, uri: folderUri });
                         }
                     });
                 }
